@@ -1,208 +1,201 @@
 # 🛡️ Compliance Drift Detector
 
-**Compliance Drift Detector** is an AI-powered regulatory auditing system that analyzes 401(k) plan documents and evaluates feature-level compliance using an **agentic LangGraph pipeline**, an **internal Pinecone-backed knowledge base**, and a **restricted official-source web search** (DuckDuckGo).
-
-The goal is **explainable compliance checks**: every conclusion is tied to evidence and sources.
+**An agentic AI system that audits 401(k) plan documents against current IRS and DOL regulations, catching compliance gaps before auditors do.**
 
 ---
 
-## What it does
+## The Problem
 
-1. Ingests a 401(k) plan document (SPD / PDF)
-2. Extracts structured plan features (eligibility, vesting, contributions, etc.)
-3. Evaluates each extracted feature against:
-   - **Internal Knowledge Base** (Pinecone retrieval), and if insufficient:
-   - **Official Government Sources** via **DuckDuckGo web search** restricted to allowed domains
-4. Produces:
-   - Feature-by-feature outcomes (**Compliant / Gap / Needs Review**)
-   - Evidence links (official URLs)
-   - Final report + risk summary
+401(k) plans don't fail audits overnight. They drift out of compliance slowly as regulations evolve (SECURE Act, SECURE 2.0, DOL updates) and plan documents lag behind. By the time an auditor catches it, employers face penalties, employees face uncertainty, and nobody wins.
+
+## The Solution
+
+This system acts as a proactive compliance layer. Upload a plan document, and the AI agents will extract key provisions, verify them against current regulations, and generate an audit-ready report complete with risk scores and regulatory citations.
 
 ---
 
-## Tech stack
+## ✨ Key Features
 
-### Core application
-- **Streamlit** — UI (upload, preview, modal/console, results tabs)
-- **LangGraph** — Agentic architecture + stateful execution graph
-- **LangChain + OpenAI** — LLM calls for extraction, sufficiency checks, and decisions
+**Agentic Architecture**  
+Built on LangGraph to orchestrate stateful LLM agents that extract, verify, and adjudicate plan rules autonomously.
 
-### Internal knowledge base (RAG)
-- **IRS website scraping** → text extraction → **chunking**
-- **Pinecone** — vector index storage
-- Retrieval: **Top K = 5** chunks returned per query (configurable)
+**Hybrid RAG Pipeline**  
+Combines Pinecone vector storage with semantic retrieval and restricted web verification limited to official IRS, DOL, eCFR, and Federal Register domains.
 
-### Web verification
-- **DuckDuckGo search** (via `ddgs` / `duckduckgo_search`)
-- Strict domain filtering to **official sites only**:
-  - `irs.gov`, `dol.gov`, `ecfr.gov`, `federalregister.gov`, `congress.gov`, `govinfo.gov`
+**End-to-End Document Intelligence**  
+Converts unstructured plan PDFs into structured compliance findings, risk assessments, and regulatory citations.
 
-### Reporting & visualization
-- **Plotly** — charts (summary/compliance breakdown)
-- **ReportLab** — PDF export
+**Real-Time Execution Tracing**  
+Streamlit interface shows exactly what each agent is doing, building trust through transparency.
 
-## Directory Structure
+---
 
-```text
-project/
-├── app.py
-├── requirements.txt
-├── README.md
-│
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        STREAMLIT UI                             │
+│              Upload PDF → View Agent Trace → Download Report    │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      LANGGRAPH ORCHESTRATOR                     │
+│                                                                 │
+│   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐  │
+│   │ Extract  │───▶│ Research │───▶│Adjudicate│───▶│  Report   │
+│   │ Features │    │ Regulations   │ Compliance│    │Generator   │
+│   └──────────┘    └──────────┘    └──────────┘    └──────────┘  │
+│                         │                                       │
+│                         ▼                                       │
+│              ┌─────────────────────┐                            │
+│              │   KB Sufficient?    │                            │
+│              │    Yes / No         │                            │
+│              └──────────┬──────────┘                            │
+│                         │ No                                    │
+│                         ▼                                       │
+│              ┌─────────────────────┐                            │
+│              │  Web Verification   │                            │
+│              │  (IRS/DOL/eCFR)     │                            │
+│              └─────────────────────┘                            │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       DATA LAYER                                │
+│                                                                 │
+│   ┌─────────────────┐              ┌─────────────────────────┐  │
+│   │    Pinecone     │              │   Restricted Web Search │  │
+│   │  Vector Store   │              │   • irs.gov             │  │
+│   │                 │              │   • dol.gov             │  │
+│   │  Regulation KB  │              │   • ecfr.gov            │  │
+│   │  (Pre-embedded) │              │   • federalregister.gov │  │
+│   └─────────────────┘              └─────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔧 Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Orchestration | LangGraph |
+| LLM | OpenAI GPT-5 |
+| Vector Store | Pinecone |
+| Embeddings | Sentence Transformers |
+| Web Search | DuckDuckGo API (domain-restricted) |
+| Frontend | Streamlit |
+| PDF Processing | PyPDF2 |
+
+---
+
+## 📁 Project Structure
+
+```
+compliance-drift-detector/
+├── app.py                    # Streamlit frontend
 ├── agents/
 │   ├── __init__.py
-│   ├── graph.py
-│   ├── nodes.py
-│   └── state.py
-│
+│   ├── graph.py              # LangGraph workflow definition
+│   ├── nodes.py              # Agent node implementations
+│   └── state.py              # State schema
 ├── tools/
 │   ├── __init__.py
-│   ├── extract_text.py
-│   ├── web_search.py
-│   └── knowledge_base.py
-│
-└── .env
+│   ├── pdf_extractor.py      # PDF to text conversion
+│   ├── pinecone_search.py    # Knowledge base retrieval
+│   └── web_search.py         # Restricted domain search
+├── .env.example              # Environment variable template
+└── requirements.txt          # Dependencies
 ```
----
-
-## Agentic architecture (LangGraph)
-
-The system is implemented as a **LangGraph StateGraph**, where each node is a specialized agent with a single responsibility.
-
-### Agents (nodes)
-
-1. **Document Reader** (`extract_features`)
-   - Extracts structured plan fields from the PDF text via LLM
-   - Produces:
-     - `extracted_features`
-     - `features_to_check` (a filtered list of features that were actually found)
-
-2. **Audit Conductor** (`select_next_feature`)
-   - Orchestrates the pipeline by selecting the next feature to evaluate
-   - Sets:
-     - `current_feature`
-     - `current_feature_value`
-
-3. **Policy Librarian** (`search_kb`)
-   - Queries the internal Pinecone knowledge base using feature-specific queries
-   - Returns:
-     - `kb_results` (top-k retrieved chunks)
-
-4. **Evidence Judge** (`evaluate_kb`)
-   - Determines whether KB results are sufficient to make a compliance decision
-   - Sets:
-     - `kb_sufficient = True/False`
-
-5. **Regulation Researcher** (`search_web`)
-   - Runs restricted web search if `kb_sufficient == False`
-   - Returns:
-     - `web_links` (structured list of `{title, url, snippet}`)
-     - `web_results` (text summary form for the decision prompt)
-
-6. **Compliance Decision Engine** (`determine_compliance`)
-   - Uses KB evidence + web evidence (if present)
-   - Produces a structured finding:
-     - `status`: compliant / gap / needs_review
-     - `regulation`: rule reference
-     - `notes`: reasoning
-     - `links`: official URLs used (when web search occurred)
-
-7. **Report Writer** (`generate_report`)
-   - Aggregates findings and generates the final report + risk classification
-   - Risk level example logic:
-     - High: 2+ gaps
-     - Medium: 1 gap or multiple review items
-     - Low: otherwise
 
 ---
 
-## How the graph flows
+## 🚀 Getting Started
 
-**Graph loop per feature**
-- `extract_features`
-- `select_next_feature`
-- `search_kb`
-- `evaluate_kb`
-  - if sufficient → `determine_compliance`
-  - else → `search_web` → `determine_compliance`
-- loops back to `select_next_feature`
-- when no features remain → `generate_report` → END
+### Prerequisites
 
----
-
-## Extracted features (what the system tries to pull)
-
-### Plan metadata
-- `plan_name`
-- `effective_date`
-
-### Eligibility
-- `eligibility.age_requirement`
-- `eligibility.service_requirement`
-- `eligibility.entry_dates`
-
-### Contributions
-- `contributions.employer_match_formula`
-- `contributions.match_cap`
-- `contributions.catch_up_allowed`
-
-### Vesting
-- `vesting.type`
-- `vesting.schedule`
-- `vesting.years_to_full`
-
-### Auto-enrollment
-- `auto_enrollment.enabled`
-- `auto_enrollment.default_rate`
-- `auto_enrollment.auto_escalation`
-
-### Distributions
-- `distributions.hardship_allowed`
-- `distributions.loans_allowed`
-
-**Important:** Only fields that are successfully extracted and non-null are added to `features_to_check`.
-
----
-
-## Internal Knowledge Base details
-
-The internal KB is built by:
-- Scraping IRS guidance pages (and related official pages as needed)
-- Cleaning + converting to text
-- Chunking into retrievable passages
-- Embedding + storing in **Pinecone**
-
-Retrieval behavior:
-- Each feature maps to a query (e.g., `vesting schedule requirements`)
-- The system retrieves **Top 5** chunks from Pinecone per query
-
----
-
-## Web search details
-
-Web verification is only triggered if:
-- The Evidence Judge marks KB evidence as insufficient (`kb_sufficient = False`)
-
-Search engine:
-- DuckDuckGo (DDGS)
-
-Restrictions:
-- Search results are filtered to **only** allowed official domains
-
-Returned fields per result:
-- `title` — page title
-- `url` — official link
-- `snippet` — short summary text from the search provider
-
----
-
-## Running locally
-
-### Requirements
-- Python 3.10+
+- Python 3.9+
 - OpenAI API key
-- Pinecone credentials (if your KB retrieval is enabled)
+- Pinecone API key
 
-### Install
+### Installation
+
 ```bash
+# Clone the repository
+git clone https://github.com/vaishveerkumar/compliance-drift-detector.git
+cd compliance-drift-detector
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Configure environment variables
+cp .env.example .env
+# Add your API keys to .env
+```
+
+### Running the Application
+
+```bash
+streamlit run app.py
+```
+
+Navigate to `http://localhost:8501` in your browser.
+
+---
+
+## 💡 How It Works
+
+1. **Upload** a 401(k) plan document (PDF)
+2. **Extract** agent identifies key provisions (contribution limits, vesting schedules, eligibility rules)
+3. **Research** agent queries the regulation knowledge base via semantic search
+4. **Verify** agent checks against live regulatory sources if KB coverage is insufficient
+5. **Adjudicate** agent determines compliance status for each provision
+6. **Report** agent generates audit-ready findings with risk scores and citations
+
+---
+
+## 📋 Compliance Areas Covered
+
+- Contribution limits (employee deferrals, employer match, catch-up contributions)
+- Vesting schedules (cliff, graded, SECURE 2.0 requirements)
+- Eligibility requirements (age, service, LTPT employees)
+- Safe harbor provisions
+- Required minimum distributions
+- Hardship withdrawal rules
+- Nondiscrimination testing requirements
+
+---
+
+## 🎯 Sample Output
+
+```
+COMPLIANCE AUDIT REPORT
+=======================
+Document: Acme Corp 401(k) Plan Document
+Analysis Date: December 2025
+
+FINDING #1: Vesting Schedule Non-Compliance
+Status: ⚠️ REQUIRES ATTENTION
+Risk Level: Medium
+
+Issue: Plan document specifies 7-year graded vesting schedule.
+Regulation: SECURE 2.0 Act requires maximum 3-year cliff or 
+           2-to-6-year graded vesting for employer contributions.
+Citation: SECURE 2.0 Act Section 301, effective plan years 
+          beginning after December 31, 2024
+
+Recommendation: Amend vesting schedule to comply with new maximums.
+
+---
+
+FINDING #2: LTPT Employee Eligibility
+Status: ✅ COMPLIANT
+...
+```
+
+---
