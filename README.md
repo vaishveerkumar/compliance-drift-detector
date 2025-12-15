@@ -191,11 +191,3 @@ Citation: SECURE 2.0 Act Section 301, effective plan years
 
 Recommendation: Amend vesting schedule to comply with new maximums.
 
----
-
-FINDING #2: LTPT Employee Eligibility
-Status: ✅ COMPLIANT
-...
-```
-
----
