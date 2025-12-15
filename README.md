@@ -43,8 +43,8 @@ The goal is **explainable compliance checks**: every conclusion is tied to evide
 
 ## Directory Structure
 
+```text
 project/
-│
 ├── app.py
 ├── requirements.txt
 ├── README.md
@@ -62,7 +62,7 @@ project/
 │   └── knowledge_base.py
 │
 └── .env
-
+```
 ---
 
 ## Agentic architecture (LangGraph)
