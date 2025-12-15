@@ -41,6 +41,28 @@ The goal is **explainable compliance checks**: every conclusion is tied to evide
 - **Plotly** — charts (summary/compliance breakdown)
 - **ReportLab** — PDF export
 
+## Directory Structure
+
+project/
+│
+├── app.py
+├── requirements.txt
+├── README.md
+│
+├── agents/
+│   ├── __init__.py
+│   ├── graph.py
+│   ├── nodes.py
+│   └── state.py
+│
+├── tools/
+│   ├── __init__.py
+│   ├── extract_text.py
+│   ├── web_search.py
+│   └── knowledge_base.py
+│
+└── .env
+
 ---
 
 ## Agentic architecture (LangGraph)
